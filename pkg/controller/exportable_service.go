@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/mitchellh/hashstructure"
 	"github.com/pkg/errors"
@@ -48,6 +49,10 @@ const (
 	// CustomAttrs is like a "junk drawer" - clients can put arbitrary json objects in the annotation, and
 	// we'll parse it and make that object available in the consul payload under `.custom_attrs`
 	ServiceAnnotationCustomAttrs = "kube-service-exporter.github.com/custom-attrs"
+
+	// IdPrefix allows the service to define a string with which to prefix the
+	// Id, allowing control over the sort order of two or more services
+	ServiceAnnotationIdPrefix = "kube-service-exporter.github.com/id-prefix"
 )
 
 type ExportedService struct {
@@ -84,6 +89,8 @@ type ExportedService struct {
 
 	CustomAttrs map[string]interface{} `json:"custom_attrs"`
 
+	IdPrefix string `json:"id_prefix,omitempty"`
+
 	// Version is a version specifier that can be used to force the Hash function
 	// to change and thus rewrite the service metadata. This is useful in cases
 	// where the JSON serialization of the object changes, but not the struct
@@ -113,10 +120,19 @@ func NewExportedServicesFromKubeService(service *v1.Service, clusterId string) (
 // If two services share the same Id on different clusters, the Service will
 // be namespaced based on the Tag below, so it can be differentiated.
 func (es *ExportedService) Id() string {
-	if es.ServicePerCluster {
-		return fmt.Sprintf("%s-%s-%s-%s", es.ClusterId, es.Namespace, es.Name, es.PortName)
+	var sb strings.Builder
+
+	if es.IdPrefix != "" {
+		sb.WriteString(es.IdPrefix + "-")
 	}
-	return fmt.Sprintf("%s-%s-%s", es.Namespace, es.Name, es.PortName)
+
+	if es.ServicePerCluster {
+		sb.WriteString(es.ClusterId + "-")
+	}
+
+	sb.WriteString(fmt.Sprintf("%s-%s-%s", es.Namespace, es.Name, es.PortName))
+
+	return sb.String()
 }
 
 // NewExportedService takes in a v1.Service and an index into the
@@ -204,6 +220,10 @@ func NewExportedService(service *v1.Service, clusterId string, portIdx int) (*Ex
 		es.CustomAttrs = customAttrs
 	} else {
 		es.CustomAttrs = map[string]interface{}{}
+	}
+
+	if val, ok := service.Annotations[ServiceAnnotationIdPrefix]; ok {
+		es.IdPrefix = val
 	}
 
 	return es, nil
