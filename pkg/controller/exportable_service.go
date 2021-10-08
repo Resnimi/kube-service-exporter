@@ -131,7 +131,7 @@ func (es *ExportedService) Id() string {
 		sb.WriteString(es.ClusterId + "-")
 	}
 
-	sb.WriteString(fmt.Sprintf("%s-%s-%s", es.Namespace, es.Name, es.PortName))
+	fmt.Fprintf(&sb, "%s-%s-%s", es.Namespace, es.Name, es.PortName)
 
 	return sb.String()
 }
