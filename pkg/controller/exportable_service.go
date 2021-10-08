@@ -89,7 +89,8 @@ type ExportedService struct {
 
 	CustomAttrs map[string]interface{} `json:"custom_attrs"`
 
-	IdPrefix string `json:"id_prefix,omitempty"`
+	// An optional prefix to be added to the generated ExportedService id
+	IdPrefix string `json:"-"`
 
 	// Version is a version specifier that can be used to force the Hash function
 	// to change and thus rewrite the service metadata. This is useful in cases
