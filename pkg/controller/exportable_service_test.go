@@ -177,6 +177,21 @@ func TestId(t *testing.T) {
 		es, _ := NewExportedService(svc, "cluster", 0)
 		assert.Equal(t, "cluster-default-service1-80", es.Id())
 	})
+
+	t.Run("Id includes prefix", func(t *testing.T) {
+		svc := ServiceFixture()
+		svc.Annotations[ServiceAnnotationIdPrefix] = "myprefix"
+		es, _ := NewExportedService(svc, "cluster", 0)
+		assert.Equal(t, "myprefix-cluster-default-service1-http", es.Id())
+	})
+
+	t.Run("Id includes prefix and not cluster", func(t *testing.T) {
+		svc := ServiceFixture()
+		svc.Annotations[ServiceAnnotationIdPrefix] = "myprefix"
+		svc.Annotations[ServiceAnnotationLoadBalancerServicePerCluster] = "false"
+		es, _ := NewExportedService(svc, "cluster", 0)
+		assert.Equal(t, "myprefix-default-service1-http", es.Id())
+	})
 }
 
 func TestHash(t *testing.T) {
@@ -204,7 +219,7 @@ func TestJSON(t *testing.T) {
 	assert.NoError(t, err)
 	expected := `{ "service_per_cluster": true,
 					"health_check_port": 32123,
-					"hash": "b2e9f54c0b6f432b",
+					"hash": "ccf2182adeb5534e",
 					"ClusterName": "cluster",
 					"port": 32123,
 					"custom_attrs": {},
