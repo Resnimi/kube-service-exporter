@@ -17,4 +17,6 @@ RUN make
 
 FROM debian:buster-slim
 COPY --from=builder /src/kube-service-exporter/bin/kube-service-exporter /usr/local/bin
+RUN useradd --create-home --user-group nonroot
+USER nonroot
 ENTRYPOINT ["/usr/local/bin/kube-service-exporter"]
